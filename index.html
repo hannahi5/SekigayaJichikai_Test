@@ -78,7 +78,7 @@
                     <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked> 一般（役職なし）</label>
                     <label class="option"><input type="checkbox" name="role" value="2026前期 - 地区長"> 2026前期 - 地区長</label>
                     <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長"> 2026前期 - 班長</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長(代理)"> 2026前期 - 班長（代理）</label>
+                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長（代理）"> 2026前期 - 班長（代理）</label>
                     <label class="option"><input type="checkbox" name="role" value="防災部"> 防災部</label>
                     <label class="option"><input type="checkbox" name="role" value="その他役員"> その他役員</label>
                 </div>
@@ -91,7 +91,7 @@
                    <p class="hint">※会員以外の方は、お名前の入力のみ必須です</p>
             
             </div>            
-            <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録2する</button>
+            <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
         </div>
 
         <div id="success-message">
@@ -102,136 +102,177 @@
         </div>
     </div>
 
-<script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyImbTfuxRODt3OtRX2TnSK6TlZNxFKObjlmZPJV5cuj4dh4MB-Rzby_n1OFFKUKuSvyA/exec";
-    const LIFF_ID = "2009310809-0MVo7qOg";
 
+<script>
+    // ==========================================
+    // 1. 【設定値】ここを最新のものに貼り替えてください
+    // ==========================================
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyImbTfuxRODt3OtRX2TnSK6TlZNxFKObjlmZPJV5cuj4dh4MB-Rzby_n1OFFKUKuSvyA/exec";
+    const LIFF_ID = "2009260987-4wydhg8q";
+    
     let isLiffInitialized = false;
 
-    liff.init({ liffId:LIFF_ID })
-        .then(() => { 
+    // ==========================================
+    // 2. 【初期化処理】
+    // ==========================================
+    liff.init({ liffId: LIFF_ID })
+        .then(async () => {  
             isLiffInitialized = true;
-            if (!liff.isLoggedIn()) { liff.login(); } 
+            if (!liff.isLoggedIn()) { 
+                liff.login(); 
+            } else {
+                // ★追加機能：ページを開いた瞬間に「仮登録」を送信
+                try {
+                    const profile = await liff.getProfile();
+                    fetch(GAS_URL, {
+                        method: "POST",
+                        mode: "no-cors", // これが必要
+                        body: JSON.stringify({ 
+                            action: "temp_register", 
+                            userId: profile.userId, 
+                            displayName: profile.displayName,
+                            deviceInfo: navigator.userAgent
+                        })
+                    });
+                    console.log("仮登録ログ送信完了");
+                } catch (e) {
+                    console.error("仮登録送信失敗", e);
+                }
+            }
+        })
+        .catch((err) => {
+            console.error("LIFF初期化失敗", err);
         });
-
-
-    // 要素の取得
-    const hanInput = document.getElementById("hanBan");
-    const nonMemberCheck = document.getElementById("nonMember");
-    
-    // 1. 班番号が入力されたら「会員以外」を制御
-    hanInput.addEventListener("input", () => {
-      if (hanInput.value.length > 0) {
-        nonMemberCheck.disabled = true; // チェックボックスを無効化
-        nonMemberCheck.parentElement.style.opacity = "0.5"; // 見た目を薄くする
-      } else {
-        nonMemberCheck.disabled = false;
-        nonMemberCheck.parentElement.style.opacity = "1";
-      }
-    });
-    
-    // 2. 「会員以外」がチェックされたら「班番号」を制御
-    nonMemberCheck.addEventListener("change", () => {
-      if (nonMemberCheck.checked) {
-        hanInput.disabled = true;
-        hanInput.value = ""; // 入力されていたら消去
-        hanInput.style.backgroundColor = "#f0f0f0"; // グレー背景
-      } else {
-        hanInput.disabled = false;
-        hanInput.style.backgroundColor = "#ffffff";
-      }
-    });
-    
-    document.addEventListener('change', (e) => {
-        if (e.target.name === 'role') {
-            const generalCb = document.getElementById('role-general');
-            const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
-            if (e.target === generalCb && generalCb.checked) {
-                otherCbs.forEach(cb => cb.checked = false);
-            } else if (e.target !== generalCb && e.target.checked) {
-                generalCb.checked = false;
-            }
-            if (document.querySelectorAll('input[name="role"]:checked').length === 0) {
-                generalCb.checked = true;
-            }
-        }
-    });
-
-async function submitForm() {
-    if (!isLiffInitialized) return;
-
-    const btn = document.getElementById('submitBtn');
-    const isNonMemberChecked = document.getElementById("nonMember").checked;
-    
-    const lastName = document.getElementById('lastName').value.trim();
-    const firstName = document.getElementById('firstName').value.trim();
-    const ageGeneration = document.getElementById('ageGeneration').value; 
-    const hanStr = document.getElementById('hanBan').value.trim();
-    const kobanStr = document.getElementById('koban').value.trim();
-
-    // 1. 必須チェック
-    if (!isNonMemberChecked) {
-        if (!lastName || !firstName || !hanStr || !kobanStr) {
-            alert("自治会員様は、お名前、班番号、戸番を必ず入力してください。\n（会員以外の方は「会員以外」にチェックを入れてください）");
-            return;
-        }
+    // 画面が完全に読み込まれてから動作を開始する（エラー防止）
+    window.onload = function() {
+        const hanInput = document.getElementById("hanBan");
+        const nonMemberCheck = document.getElementById("nonMember");
         
-        // 2. 範囲チェック（会員のみ）
-        const han = parseInt(hanStr, 10);
-        if (isNaN(han) || han < 1 || han > 101) {
-            alert("班番号は1〜101の間で正しく入力してください。");
-            return;
+        if (hanInput && nonMemberCheck) {
+            // 1. 班番号入力時の制御
+            hanInput.addEventListener("input", () => {
+                if (hanInput.value.length > 0) {
+                    nonMemberCheck.disabled = true;
+                    nonMemberCheck.parentElement.style.opacity = "0.5";
+                } else {
+                    nonMemberCheck.disabled = false;
+                    nonMemberCheck.parentElement.style.opacity = "1";
+                }
+            });
+            
+            // 2. 「会員以外」チェック時の制御
+            nonMemberCheck.addEventListener("change", () => {
+                if (nonMemberCheck.checked) {
+                    hanInput.disabled = true;
+                    hanInput.value = "";
+                    hanInput.style.backgroundColor = "#f0f0f0";
+                } else {
+                    hanInput.disabled = false;
+                    hanInput.style.backgroundColor = "#ffffff";
+                }
+            });
         }
-        const koban = parseInt(kobanStr, 10);
-        if (isNaN(koban) || koban < 1 || koban > 19) {
-            alert("戸番は1〜19の間で正しく入力してください。");
-            return;
-        }
-    } else {
-        if (!lastName || !firstName) {
-            alert("お名前を入力してください。");
-            return;
-        }
-    }
 
-    btn.disabled = true;
-    btn.innerText = "登録中...";
-
-    const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked')).map(el => el.value);
-    const roles = selectedRoles.length > 0 ? selectedRoles.join('/') : "一般";
-
-    try {
-        const profile = await liff.getProfile();
-        const formData = {
-            userId: profile.userId,
-            displayName: profile.displayName,
-            lastName: lastName,
-            firstName: firstName,
-            ageGeneration: ageGeneration,
-            hanban: hanStr, // GAS側に合わせる
-            koban: kobanStr,
-            roles: roles,
-            nonMember: isNonMemberChecked ? "YES" : "NO"
-        };
-
-        await fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify(formData)
+        // 役職チェックボックスの排他制御（一般 vs その他）
+        document.addEventListener('change', (e) => {
+            if (e.target.name === 'role') {
+                const generalCb = document.getElementById('role-general');
+                const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
+                if (e.target === generalCb && generalCb.checked) {
+                    otherCbs.forEach(cb => cb.checked = false);
+                } else if (e.target !== generalCb && e.target.checked) {
+                    generalCb.checked = false;
+                }
+                if (document.querySelectorAll('input[name="role"]:checked').length === 0) {
+                    generalCb.checked = true;
+                }
+            }
         });
+    };
 
-        // 成功時の処理...
+    // ==========================================
+    // 3. 【メイン機能】バリデーションと送信
+    // ==========================================
+    async function submitForm() {
+        if (!isLiffInitialized) {
+            alert("LIFFの準備ができていません。再読み込みしてください。");
+            return;
+        }
 
+        const btn = document.getElementById('submitBtn');
+        const isNonMemberChecked = document.getElementById("nonMember").checked;
+        
+        const lastName = document.getElementById('lastName').value.trim();
+        const firstName = document.getElementById('firstName').value.trim();
+        const ageGeneration = document.getElementById('ageGeneration').value; 
+        const hanStr = document.getElementById('hanBan').value.trim();
+        const kobanStr = document.getElementById('koban').value.trim();
+
+        // --- バリデーション ---
+        if (!isNonMemberChecked) {
+            // 自治会員の場合
+            if (!lastName || !firstName || !hanStr || !kobanStr) {
+                alert("自治会員様は、お名前、班番号、戸番を必ず入力してください。");
+                return;
+            }
+            const han = parseInt(hanStr, 10);
+            if (isNaN(han) || han < 1 || han > 101) {
+                alert("班番号は1〜101の間で正しく入力してください。");
+                return;
+            }
+        } else {
+            // 会員以外（GUEST）の場合
+            if (!lastName || !firstName) {
+                alert("お名前を入力してください。");
+                return;
+            }
+        }
+
+        // ボタンの無効化（二重送信防止）
+        btn.disabled = true;
+        btn.innerText = "登録中...";
+
+        // 役職の文字列作成
+        const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked')).map(el => el.value);
+        const roles = selectedRoles.length > 0 ? selectedRoles.join('/') : "一般";
+
+        try {
+            // ユーザープロフィールの取得
+            const profile = await liff.getProfile();
+            
+            // GASへ送るデータ構造
+            const formData = {
+                userId: profile.userId,
+                displayName: profile.displayName,
+                lastName: lastName,
+                firstName: firstName,
+                ageGeneration: ageGeneration,
+                hanban: hanStr,
+                koban: kobanStr,
+                roles: roles,
+                nonMember: isNonMemberChecked ? "YES" : "NO",
+                deviceInfo: `UA:${navigator.userAgent} | PLAT:${navigator.platform} | LANG:${navigator.language}`
+            };
+
+            // GASへデータ送信
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(formData)
+            });
+
+            // 送信完了後のメッセージ
             if (liff.isInClient()) {
                 await liff.sendMessages([{ type: 'text', text: "登録・更新を完了しました" }]).catch(e => console.log(e));
             }
 
+            // 画面表示の切り替え
             document.getElementById('input-form').style.display = 'none';
             document.getElementById('success-message').style.display = 'block';
 
         } catch (error) {
             console.error(error);
-            alert("送信に失敗しました。");
+            alert("送信に失敗しました。もう一度お試しください。");
             btn.disabled = false;
             btn.innerText = "この内容で登録する";
         }
@@ -239,5 +280,3 @@ async function submitForm() {
 </script>
 </body>
 </html>
-
-

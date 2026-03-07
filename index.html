@@ -138,7 +138,6 @@
     // 画面が完全に読み込まれてから動作を開始する（エラー防止）
     window.onload = function() {
         const hanInput = document.getElementById("hanBan");
-        const nonMemberCheck = document.getElementById("nonMember");
         
         if (hanInput && nonMemberCheck) {
             // 班番号入力時の制御
@@ -178,10 +177,9 @@
             alert("LIFFの準備ができていません。再読み込みしてください。");
             return;
         }
+        
 
         const btn = document.getElementById('submitBtn');
-        const isNonMemberChecked = document.getElementById("nonMember").checked;
-        
         const lastName = document.getElementById('lastName').value.trim();
         const firstName = document.getElementById('firstName').value.trim();
         const ageGeneration = document.getElementById('ageGeneration').value; 

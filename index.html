@@ -82,15 +82,7 @@
                     <label class="option"><input type="checkbox" name="role" value="防災部"> 防災部</label>
                     <label class="option"><input type="checkbox" name="role" value="その他役員"> その他役員</label>
                 </div>
-            </div>
-            <div class="extra-section">
-              <label class="option-special">
-                <input type="checkbox" name="non_member" id="nonMember" value="YES"> 
-                会員以外
-              </label>
-                   <p class="hint">※会員以外の方は、お名前の入力のみ必須です</p>
-            
-            </div>            
+            </div>       
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
         </div>
 
@@ -149,7 +141,7 @@
         const nonMemberCheck = document.getElementById("nonMember");
         
         if (hanInput && nonMemberCheck) {
-            // 1. 班番号入力時の制御
+            // 班番号入力時の制御
             hanInput.addEventListener("input", () => {
                 if (hanInput.value.length > 0) {
                     nonMemberCheck.disabled = true;
@@ -157,18 +149,6 @@
                 } else {
                     nonMemberCheck.disabled = false;
                     nonMemberCheck.parentElement.style.opacity = "1";
-                }
-            });
-            
-            // 2. 「会員以外」チェック時の制御
-            nonMemberCheck.addEventListener("change", () => {
-                if (nonMemberCheck.checked) {
-                    hanInput.disabled = true;
-                    hanInput.value = "";
-                    hanInput.style.backgroundColor = "#f0f0f0";
-                } else {
-                    hanInput.disabled = false;
-                    hanInput.style.backgroundColor = "#ffffff";
                 }
             });
         }
@@ -209,25 +189,16 @@
         const kobanStr = document.getElementById('koban').value.trim();
 
         // --- バリデーション ---
-        if (!isNonMemberChecked) {
-            // 自治会員の場合
-            if (!lastName || !firstName || !hanStr || !kobanStr) {
-                alert("自治会員様は、お名前、班番号、戸番を必ず入力してください。");
-                return;
-            }
-            const han = parseInt(hanStr, 10);
-            if (isNaN(han) || han < 1 || han > 101) {
-                alert("班番号は1〜101の間で正しく入力してください。");
-                return;
-            }
-        } else {
-            // 会員以外（GUEST）の場合
-            if (!lastName || !firstName) {
-                alert("お名前を入力してください。");
-                return;
-            }
+        if (!lastName || !firstName || !hanStr || !kobanStr) {
+            alert("お名前、班番号、戸番を必ず入力してください。");
+            return;
         }
-
+        const han = parseInt(hanStr, 10);
+        if (isNaN(han) || han < 1 || han > 101) {
+            alert("班番号は1〜101の間で正しく入力してください。");
+            return;
+        }
+        
         // ボタンの無効化（二重送信防止）
         btn.disabled = true;
         btn.innerText = "登録中...";
@@ -250,7 +221,6 @@
                 hanban: hanStr,
                 koban: kobanStr,
                 roles: roles,
-                nonMember: isNonMemberChecked ? "YES" : "NO",
                 deviceInfo: `UA:${navigator.userAgent} | PLAT:${navigator.platform} | LANG:${navigator.language}`
             };
 
@@ -262,9 +232,9 @@
             });
 
             // 送信完了後のメッセージ
-            if (liff.isInClient()) {
-                await liff.sendMessages([{ type: 'text', text: "登録・更新を完了しました" }]).catch(e => console.log(e));
-            }
+            // if (liff.isInClient()) {
+            //     await liff.sendMessages([{ type: 'text', text: "登録・更新を完了しました" }]).catch(e => console.log(e));
+            // }
 
             // 画面表示の切り替え
             document.getElementById('input-form').style.display = 'none';

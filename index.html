@@ -261,7 +261,7 @@
 
             // 送信完了後のメッセージ
             if (liff.isInClient()) {
-                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roleStr}\n\n`;
+                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\n`;
                 
                 await liff.sendMessages([{
                     type: 'text',

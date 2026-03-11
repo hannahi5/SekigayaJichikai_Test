@@ -216,10 +216,18 @@
             });
 
             // 送信完了後のメッセージ
-            // if (liff.isInClient()) {
-            //     await liff.sendMessages([{ type: 'text', text: "登録・更新を完了しました" }]).catch(e => console.log(e));
-            // }
-
+            if (liff.isInClient()) {
+                const logMessage = `氏名：${lastName} ${firstName}\n` +
+                                 `班-戸番：${hanStr}-${kobanStr}\n` +
+                                 `役職：${roles}\n` +
+                                 `で登録します。`;
+                
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: logMessage
+                }]).catch(e => console.log("メッセージ送信失敗:", e));
+            }
+           
             // 画面表示の切り替え
             document.getElementById('input-form').style.display = 'none';
             document.getElementById('success-message').style.display = 'block';

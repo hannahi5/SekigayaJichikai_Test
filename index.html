@@ -2,45 +2,55 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>関ヶ谷自治会 公式LINE 利用登録・更新（テスト用）</title>
+    <title>関ヶ谷自治会 公式LINE 利用登録・更新</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background-color: #f4f7f6; }
         .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
         h2 { font-size: 18px; color: #1DB446; margin-bottom: 15px; border-left: 4px solid #1DB446; padding-left: 10px; }
         .form-group { margin-bottom: 15px; }
-        
-        /* ラベルと必須マークのスタイル */
         label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #555; }
         .required { color: #e53935; font-size: 11px; margin-left: 5px; vertical-align: middle; border: 1px solid #e53935; padding: 1px 4px; border-radius: 3px; }
-
         .name-flex { display: flex; gap: 10px; }
         input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: white; }
         .hint { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
         .option-list { border: 1px solid #eee; border-radius: 8px; padding: 10px; background: #fafafa; }
         .option { display: flex; align-items: center; padding: 8px 0; cursor: pointer; border-bottom: 1px solid #eee; }
-        .option:last-child { border-bottom: none; }
         input[type="checkbox"] { width: 20px; height: 20px; margin-right: 10px; accent-color: #1DB446; }
         .btn { display: block; width: 100%; padding: 15px; background: #1DB446; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; text-align: center; }
-        .btn:active { background: #179c3d; }
-        .btn:disabled { background: #ccc; }
-
-        #success-message { display: none; text-align: center; padding: 40px 10px; }
-        #success-message h3 { color: #1DB446; margin-bottom: 10px; }
+        .btn-sub { background: #666; margin-top: 10px; font-size: 14px; padding: 10px; }
         
-        /* 例外セクション */
-      .extra-section { margin-top: 30px; border-top: 1px solid #ccc; pt: 15px; padding-top: 25px;}
-      .option-special { display: block; color: #d9534f; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        /* 確認画面(View Mode)のスタイル */
+        #view-mode { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #888; }
+        .info-value { font-weight: bold; color: #333; }
+
+        /* ローディングアニメーション */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #666; font-size: 14px;">読み込み中...</p>
+    </div>
+
     <div class="container">
-        <div id="input-form">
-            <h2>関ヶ谷自治会 公式LINE 利用登録・更新（テスト用）</h2>
-            <p id="welcome-msg" style="font-size: 14px; color: #666; margin-bottom: 20px;">
-            必要事項を入力して、登録をお願いします。
-            </p>
-            
+        <h2>自治会 公式LINE 登録・更新</h2>
+        <p id="welcome-msg" style="font-size: 14px; color: #666; margin-bottom: 20px;">読込中...</p>
+
+        <div id="view-mode" style="display: none;">
+            <div class="info-row"><span class="info-label">氏名</span><span class="info-value" id="view-name"></span></div>
+            <div class="info-row"><span class="info-label">班-戸番</span><span class="info-value" id="view-address"></span></div>
+            <div class="info-row"><span class="info-label">役職</span><span class="info-value" id="view-roles"></span></div>
+            <button type="button" class="btn btn-sub" onclick="switchToEditMode()">情報を修正・変更する</button>
+        </div>
+
+        <div id="input-form" style="display: none;">
             <div class="form-group">
                 <label>お名前<span class="required">必須</span></label>
                 <div class="name-flex">
@@ -48,55 +58,43 @@
                     <input type="text" id="firstName" placeholder="名">
                 </div>
             </div>
-
             <div class="form-group">
                 <label>班番号（1〜101）<span class="required">必須</span></label>
                 <input type="number" id="hanBan" placeholder="数字で入力" min="1" max="101" inputmode="numeric">
-                <p class="hint">※複数の班がある場合は、小さい方の班番号を入力してください</p>
             </div>
-
             <div class="form-group">
                 <label>戸番（1〜19）<span class="required">必須</span></label>
                 <input type="number" id="koban" placeholder="数字で入力" min="1" max="19" inputmode="numeric">
             </div>
-
             <div class="form-group">
                 <label>年代</label>
                 <select id="ageGeneration">
                     <option value="">選択してください</option>
-                    <option value="10代以下">10代以下</option>
-                    <option value="20代">20代</option>
-                    <option value="30代">30代</option>
-                    <option value="40代">40代</option>
-                    <option value="50代">50代</option>
-                    <option value="60代">60代</option>
-                    <option value="70代">70代</option>
-                    <option value="80代以上">80代以上</option>
+                    <option value="10代以下">10代以下</option><option value="20代">20代</option><option value="30代">30代</option>
+                    <option value="40代">40代</option><option value="50代">50代</option><option value="60代">60代</option>
+                    <option value="70代">70代</option><option value="80代以上">80代以上</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label>該当する役職（役職の複数選択可）</label>
+                <label>該当する役職</label>
                 <div class="option-list">
-                    <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked> 一般（役職なし）</label>
+                    <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked> 一般</label>
                     <label class="option"><input type="checkbox" name="role" value="2026前期 - 地区長"> 2026前期 - 地区長</label>
                     <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長"> 2026前期 - 班長</label>
                     <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長（代理）"> 2026前期 - 班長（代理）</label>
                     <label class="option"><input type="checkbox" name="role" value="防災部"> 防災部</label>
                     <label class="option"><input type="checkbox" name="role" value="その他役員"> その他役員</label>
                 </div>
-            </div>       
+            </div>
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
         </div>
 
-        <div id="success-message">
-            <h3>Check!</h3>
-            <p>登録・更新が完了しました。</p>
-            <p>ご協力ありがとうございました。</p>
+        <div id="success-message" style="display: none; text-align: center;">
+            <h3 style="color: #1DB446;">完了</h3>
+            <p>お手続きありがとうございました。</p>
             <button class="btn" onclick="liff.closeWindow()">閉じる</button>
         </div>
     </div>
-
 
 <script>
     // ==========================================
@@ -104,181 +102,106 @@
     // ==========================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyL2UuE6HvqvwmU9CuPPWZ7Yzw9phN0eZ-yNi3q-Jwjwf56ExbJ5kuv1tdWHMpbCYm3-w/exec";
     const LIFF_ID = "2009310809-0MVo7qOg";
-    
     let isLiffInitialized = false;
 
-    // ==========================================
-    // 2. 【初期化処理】
-    // ==========================================
-    liff.init({ liffId: LIFF_ID })
-        .then(async () => {  
-            isLiffInitialized = true;
-            if (!liff.isLoggedIn()) { 
-                liff.login(); 
-            } else {
-                const profile = await liff.getProfile();
-            
-                // --- ここから追加：既存データの読み込み ---
-                try {
-                    // GASに既存データのリクエスト
-                    const response = await fetch(GAS_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            action: "get_user_info",
-                            userId: profile.userId
-                        })
-                    });
-                    
-                    // GASからデータが返ってきたら
-                    const result = await response.json();
-                    
-                    if (result.status === "success") {
-                        const u = result.data;
-                        // 各入力欄にデータを自動セット
-                        document.getElementById('lastName').value = u.lastName;
-                        document.getElementById('firstName').value = u.firstName;
-                        document.getElementById('hanBan').value = u.han;
-                        document.getElementById('koban').value = u.koban;
-                        document.getElementById('ageGeneration').value = u.age;
-                        
-                        // 役職（チェックボックス）の復元
-                        if (u.roles) {
-                            const roleArray = u.roles.split('/');
-                            document.querySelectorAll('input[name="role"]').forEach(cb => {
-                                cb.checked = roleArray.includes(cb.value);
-                            });
-                        }
-    
-                        // 画面の文言を「確認・更新」モードに変える
-                        document.getElementById('welcome-msg').innerText = "登録済みの情報は以下の通りです。変更がある場合は書き換えて更新してください。";
-                        document.getElementById('submitBtn').innerText = "登録情報を更新する";
-                    }
-                } catch (e) {
-                    console.log("既存データの取得に失敗しました（初回登録の可能性があります）");
-                }
-
-                // ページを開いた瞬間に「仮登録」を送信
-                try {
-                    const profile = await liff.getProfile();
-                    fetch(GAS_URL, {
-                        method: "POST",
-                        mode: "no-cors", // これが必要
-                        body: JSON.stringify({ 
-                            action: "temp_register", 
-                            userId: profile.userId, 
-                            displayName: profile.displayName,
-                            deviceInfo: navigator.userAgent
-                        })
-                    });
-                    console.log("仮登録ログ送信完了");
-                } catch (e) {
-                    console.error("仮登録送信失敗", e);
-                }
-            }
-        })
-        .catch((err) => {
-            console.error("LIFF初期化失敗", err);
-        });
-    // 画面が完全に読み込まれてから動作を開始する（エラー防止）
-    window.onload = function() {
-
-        // 役職チェックボックスの排他制御（一般 vs その他）
-        document.addEventListener('change', (e) => {
-            if (e.target.name === 'role') {
-                const generalCb = document.getElementById('role-general');
-                const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
-                if (e.target === generalCb && generalCb.checked) {
-                    otherCbs.forEach(cb => cb.checked = false);
-                } else if (e.target !== generalCb && e.target.checked) {
-                    generalCb.checked = false;
-                }
-                if (document.querySelectorAll('input[name="role"]:checked').length === 0) {
-                    generalCb.checked = true;
-                }
-            }
-        });
-    };
-
-    // ==========================================
-    // 3. 【メイン機能】バリデーションと送信
-    // ==========================================
-    async function submitForm() {
-        if (!isLiffInitialized) {
-            alert("LIFFの準備ができていません。再読み込みしてください。");
-            return;
-        }
+    liff.init({ liffId: LIFF_ID }).then(async () => {
+        isLiffInitialized = true;
+        if (!liff.isLoggedIn()) { liff.login(); return; }
         
+        const profile = await liff.getProfile();
+        
+        try {
+            // 既存データの取得
+            const response = await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "get_user_info", userId: profile.userId })
+            });
+            const result = await response.json();
 
+            if (result.status === "success") {
+                const u = result.data;
+                // テキスト表示にセット
+                document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
+                document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
+                document.getElementById('view-roles').innerText = u.roles || "一般";
+                
+                // フォームの裏側にもセット
+                document.getElementById('lastName').value = u.lastName;
+                document.getElementById('firstName').value = u.firstName;
+                document.getElementById('hanBan').value = u.han;
+                document.getElementById('koban').value = u.koban;
+                document.getElementById('ageGeneration').value = u.age;
+                if (u.roles) {
+                    const roleArray = u.roles.split('/');
+                    document.querySelectorAll('input[name="role"]').forEach(cb => {
+                        cb.checked = roleArray.includes(cb.value);
+                    });
+                }
+                
+                document.getElementById('view-mode').style.display = 'block';
+                document.getElementById('welcome-msg').innerText = "ご登録済みの情報は以下の通りです。";
+            } else {
+                document.getElementById('input-form').style.display = 'block';
+                document.getElementById('welcome-msg').innerText = "必要事項を入力して、登録をお願いします。";
+            }
+        } catch (e) {
+            document.getElementById('input-form').style.display = 'block';
+        } finally {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // 仮登録ログ
+        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "temp_register", userId: profile.userId, displayName: profile.displayName }) });
+
+    }).catch(err => console.error(err));
+
+    function switchToEditMode() {
+        document.getElementById('view-mode').style.display = 'none';
+        document.getElementById('input-form').style.display = 'block';
+        document.getElementById('welcome-msg').innerText = "修正内容を入力して、登録ボタンを押してください。";
+    }
+
+    async function submitForm() {
         const btn = document.getElementById('submitBtn');
         const lastName = document.getElementById('lastName').value.trim();
         const firstName = document.getElementById('firstName').value.trim();
-        const ageGeneration = document.getElementById('ageGeneration').value; 
-        const hanStr = document.getElementById('hanBan').value.trim();
-        const kobanStr = document.getElementById('koban').value.trim();
-
-        // --- バリデーション ---
-        if (!lastName || !firstName || !hanStr || !kobanStr) {
-            alert("お名前、班番号、戸番を必ず入力してください。");
-            return;
-        }
-        const han = parseInt(hanStr, 10);
-        if (isNaN(han) || han < 1 || han > 101) {
-            alert("班番号は1〜101の間で正しく入力してください。");
-            return;
-        }
-        
-        // ボタンの無効化（二重送信防止）
-        btn.disabled = true;
-        btn.innerText = "登録中...";
-
-        // 役職の文字列作成
+        const hanStr = document.getElementById('hanBan').value;
+        const kobanStr = document.getElementById('koban').value;
         const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked')).map(el => el.value);
         const roles = selectedRoles.length > 0 ? selectedRoles.join('/') : "一般";
 
-        try {
-            // ユーザープロフィールの取得
-            const profile = await liff.getProfile();
-            
-            // GASへ送るデータ構造
-            const formData = {
-                userId: profile.userId,
-                displayName: profile.displayName,
-                lastName: lastName,
-                firstName: firstName,
-                ageGeneration: ageGeneration,
-                hanban: hanStr,
-                koban: kobanStr,
-                roles: roles,
-                deviceInfo: `UA:${navigator.userAgent} | PLAT:${navigator.platform} | LANG:${navigator.language}`
-            };
+        if (!lastName || !firstName || !hanStr || !kobanStr) { alert("必須項目をすべて入力してください。"); return; }
 
-            // GASへデータ送信
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        try {
+            const profile = await liff.getProfile();
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    userId: profile.userId,
+                    lastName: lastName,
+                    firstName: firstName,
+                    hanban: hanStr,
+                    koban: kobanStr,
+                    ageGeneration: document.getElementById('ageGeneration').value,
+                    roles: roles,
+                    displayName: profile.displayName
+                })
             });
 
-            // 送信完了後のメッセージ
             if (liff.isInClient()) {
-                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\n`;
-                
-                await liff.sendMessages([{
-                    type: 'text',
-                    text: logMessage
-                }]).catch(e => console.log("メッセージ送信失敗:", e));
+                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\nで登録します。`;
+                await liff.sendMessages([{ type: 'text', text: logMessage }]);
             }
-
-            
-            // 画面表示の切り替え
             document.getElementById('input-form').style.display = 'none';
+            document.getElementById('view-mode').style.display = 'none';
             document.getElementById('success-message').style.display = 'block';
-
-        } catch (error) {
-            console.error(error);
-            alert("送信に失敗しました。もう一度お試しください。");
+        } catch (e) {
+            alert("エラーが発生しました。");
             btn.disabled = false;
-            btn.innerText = "この内容で登録する";
         }
     }
 </script>

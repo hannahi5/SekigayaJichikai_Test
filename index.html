@@ -37,6 +37,9 @@
     <div class="container">
         <div id="input-form">
             <h2>関ヶ谷自治会 公式LINE 利用登録・更新（テスト用）</h2>
+            <p id="welcome-msg" style="font-size: 14px; color: #666; margin-bottom: 20px;">
+            必要事項を入力して、登録をお願いします。
+            </p>
             
             <div class="form-group">
                 <label>お名前<span class="required">必須</span></label>
@@ -113,7 +116,48 @@
             if (!liff.isLoggedIn()) { 
                 liff.login(); 
             } else {
-                // ★追加機能：ページを開いた瞬間に「仮登録」を送信
+                const profile = await liff.getProfile();
+            
+                // --- ここから追加：既存データの読み込み ---
+                try {
+                    // GASに既存データのリクエスト
+                    const response = await fetch(GAS_URL, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            action: "get_user_info",
+                            userId: profile.userId
+                        })
+                    });
+                    
+                    // GASからデータが返ってきたら
+                    const result = await response.json();
+                    
+                    if (result.status === "success") {
+                        const u = result.data;
+                        // 各入力欄にデータを自動セット
+                        document.getElementById('lastName').value = u.lastName;
+                        document.getElementById('firstName').value = u.firstName;
+                        document.getElementById('hanBan').value = u.han;
+                        document.getElementById('koban').value = u.koban;
+                        document.getElementById('ageGeneration').value = u.age;
+                        
+                        // 役職（チェックボックス）の復元
+                        if (u.roles) {
+                            const roleArray = u.roles.split('/');
+                            document.querySelectorAll('input[name="role"]').forEach(cb => {
+                                cb.checked = roleArray.includes(cb.value);
+                            });
+                        }
+    
+                        // 画面の文言を「確認・更新」モードに変える
+                        document.getElementById('welcome-msg').innerText = "登録済みの情報は以下の通りです。変更がある場合は書き換えて更新してください。";
+                        document.getElementById('submitBtn').innerText = "登録情報を更新する";
+                    }
+                } catch (e) {
+                    console.log("既存データの取得に失敗しました（初回登録の可能性があります）");
+                }
+
+                // ページを開いた瞬間に「仮登録」を送信
                 try {
                     const profile = await liff.getProfile();
                     fetch(GAS_URL, {

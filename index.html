@@ -120,6 +120,8 @@
 
             if (result.status === "success") {
                 const u = result.data;
+                // ★ タイトルを「確認」に変更
+                document.getElementById('main-title').innerText = "登録内容の確認";
                 // テキスト表示にセット
                 document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
                 document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
@@ -141,6 +143,9 @@
                 document.getElementById('view-mode').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "ご登録済みの情報は以下の通りです。";
             } else {
+                // ★ タイトルを「新規登録」に変更
+                document.getElementById('main-title').innerText = "利用登録";
+                
                 document.getElementById('input-form').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "必要事項を入力して、登録をお願いします。";
             }

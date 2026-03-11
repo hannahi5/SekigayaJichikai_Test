@@ -121,7 +121,7 @@
             if (result.status === "success") {
                 const u = result.data;
                 // ★ タイトルを「確認」に変更
-                document.getElementById('main-title').innerText = "登録内容の確認";
+                document.getElementById('main-title').innerText = "マイページ（登録情報の確認・修正）";
                 // テキスト表示にセット
                 document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
                 document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
@@ -144,7 +144,7 @@
                 document.getElementById('welcome-msg').innerText = "ご登録済みの情報は以下の通りです。";
             } else {
                 // ★ タイトルを「新規登録」に変更
-                document.getElementById('main-title').innerText = "利用登録";
+                document.getElementById('main-title').innerText = "初回利用登録";
                 
                 document.getElementById('input-form').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "必要事項を入力して、登録をお願いします。";
@@ -161,6 +161,7 @@
     }).catch(err => console.error(err));
 
     function switchToEditMode() {
+        document.getElementById('main-title').innerText = "登録情報の修正";
         document.getElementById('view-mode').style.display = 'none';
         document.getElementById('input-form').style.display = 'block';
         document.getElementById('welcome-msg').innerText = "修正内容を入力して、登録ボタンを押してください。";

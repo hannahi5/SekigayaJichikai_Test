@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マイページ（登録情報の確認・修正）</title>
+    <title>関ヶ谷自治会 公式LINE 利用登録・更新</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background-color: #f4f7f6; }
@@ -20,14 +20,17 @@
         .btn { display: block; width: 100%; padding: 15px; background: #1DB446; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; text-align: center; }
         .btn-sub { background: #666; margin-top: 10px; font-size: 14px; padding: 10px; }
         
+        /* 確認画面(View Mode)のスタイル */
         #view-mode { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
         .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+        .info-row:last-child { border-bottom: none; }
         .info-label { color: #888; }
         .info-value { font-weight: bold; color: #333; }
 
+        /* ローディングアニメーション */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(3600deg); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -38,7 +41,7 @@
 
     <div class="container">
         <h2 id="main-title">読込中...</h2>
-        <p id="welcome-msg" style="font-size: 14px; color: #666; margin-bottom: 20px;">確認しています...</p>
+        <p id="welcome-msg" style="font-size: 14px; color: #666; margin-bottom: 20px;">読込中...</p>
 
         <div id="view-mode" style="display: none;">
             <div class="info-row"><span class="info-label">氏名</span><span class="info-value" id="view-name"></span></div>
@@ -94,8 +97,11 @@
     </div>
 
 <script>
-    const GAS_URL = "あなたのGASのURL";
-    const LIFF_ID = "あなたのLIFFのID";
+    // ==========================================
+    // 1. 【設定値】ここを最新のものに貼り替えてください
+    // ==========================================
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyL2UuE6HvqvwmU9CuPPWZ7Yzw9phN0eZ-yNi3q-Jwjwf56ExbJ5kuv1tdWHMpbCYm3-w/exec";
+    const LIFF_ID = "2009310809-0MVo7qOg";
     let isLiffInitialized = false;
 
     liff.init({ liffId: LIFF_ID }).then(async () => {
@@ -105,6 +111,7 @@
         const profile = await liff.getProfile();
         
         try {
+            // 既存データの取得
             const response = await fetch(GAS_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "get_user_info", userId: profile.userId })
@@ -113,14 +120,12 @@
 
             if (result.status === "success") {
                 const u = result.data;
-                
-                // 【変更2】既存データがあった場合、タイトルを「登録内容の確認」に変更
-                document.getElementById('main-title').innerText = "登録内容の確認";
-
+                // テキスト表示にセット
                 document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
                 document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
                 document.getElementById('view-roles').innerText = u.roles || "一般";
                 
+                // フォームの裏側にもセット
                 document.getElementById('lastName').value = u.lastName;
                 document.getElementById('firstName').value = u.firstName;
                 document.getElementById('hanBan').value = u.han;
@@ -136,8 +141,6 @@
                 document.getElementById('view-mode').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "ご登録済みの情報は以下の通りです。";
             } else {
-                // 【変更3】新規ユーザーの場合、タイトルを「利用登録」に変更
-                document.getElementById('main-title').innerText = "利用登録";
                 document.getElementById('input-form').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "必要事項を入力して、登録をお願いします。";
             }
@@ -147,14 +150,12 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
+        // 仮登録ログ
         fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "temp_register", userId: profile.userId, displayName: profile.displayName }) });
 
     }).catch(err => console.error(err));
 
     function switchToEditMode() {
-        // 【変更4】修正ボタンを押した時、タイトルを「登録情報の修正」に変更
-        document.getElementById('main-title').innerText = "登録情報の修正";
-
         document.getElementById('view-mode').style.display = 'none';
         document.getElementById('input-form').style.display = 'block';
         document.getElementById('welcome-msg').innerText = "修正内容を入力して、登録ボタンを押してください。";
@@ -170,6 +171,7 @@
         const roles = selectedRoles.length > 0 ? selectedRoles.join('/') : "一般";
 
         if (!lastName || !firstName || !hanStr || !kobanStr) { alert("必須項目をすべて入力してください。"); return; }
+
         btn.disabled = true;
         btn.innerText = "送信中...";
 
@@ -196,10 +198,7 @@
             }
             document.getElementById('input-form').style.display = 'none';
             document.getElementById('view-mode').style.display = 'none';
-            // 【変更5】完了時はタイトルを「登録完了」に変更
-            document.getElementById('main-title').innerText = "登録完了";
             document.getElementById('success-message').style.display = 'block';
-            document.getElementById('welcome-msg').innerText = "";
         } catch (e) {
             alert("エラーが発生しました。");
             btn.disabled = false;

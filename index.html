@@ -217,17 +217,15 @@
 
             // 送信完了後のメッセージ
             if (liff.isInClient()) {
-                const logMessage = `氏名：${lastName} ${firstName}\n` +
-                                 `班-戸番：${hanStr}-${kobanStr}\n` +
-                                 `役職：${roles}\n` +
-                                 `で登録します。`;
+                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roleStr}\n\n`;
                 
                 await liff.sendMessages([{
                     type: 'text',
                     text: logMessage
                 }]).catch(e => console.log("メッセージ送信失敗:", e));
             }
-           
+
+            
             // 画面表示の切り替え
             document.getElementById('input-form').style.display = 'none';
             document.getElementById('success-message').style.display = 'block';

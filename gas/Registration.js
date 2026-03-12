@@ -39,8 +39,14 @@ function doPost(e) {
       
       if (finder) {
         const row = finder.getRow();
-        // 見つかった1行だけをピンポイントで取得（これが速い！）
+        // 見つかった1行だけをピンポイントで取得
         const rowData = sheet.getRange(row, 1, 1, 20).getValues()[0]; 
+
+        // E列（ステータス）が「有効」または「ブロック済」以外は未登録扱い
+        const status = rowData[4];
+        if (status !== "有効" && status !== "ブロック済") {
+          return ContentService.createTextOutput(JSON.stringify({status: 'not_found'})).setMimeType(ContentService.MimeType.JSON);
+        }
 
         // 役職リストの復元（列番号は rowData のインデックス 0〜19 に対応）
         let roles = [];

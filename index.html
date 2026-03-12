@@ -199,12 +199,16 @@
             });
 
             if (liff.isInClient()) {
-                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\nで登録します。`;
+                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\n`;
                 await liff.sendMessages([{ type: 'text', text: logMessage }]);
             }
-            document.getElementById('input-form').style.display = 'none';
-            document.getElementById('view-mode').style.display = 'none';
-            document.getElementById('success-message').style.display = 'block';
+            if (liff.isInClient()) {
+                liff.closeWindow();
+            } else {
+                document.getElementById('input-form').style.display = 'none';
+                document.getElementById('view-mode').style.display = 'none';
+                document.getElementById('success-message').style.display = 'block';
+            }
         } catch (e) {
             alert("エラーが発生しました。");
             btn.disabled = false;

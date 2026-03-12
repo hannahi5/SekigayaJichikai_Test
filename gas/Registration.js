@@ -40,7 +40,7 @@ function doPost(e) {
       if (finder) {
         const row = finder.getRow();
         // 見つかった1行だけをピンポイントで取得
-        const rowData = sheet.getRange(row, 1, 1, 20).getValues()[0]; 
+        const rowData = sheet.getRange(row, 1, 1, 21).getValues()[0]; 
 
         // E列（ステータス）が「有効」または「ブロック済」以外は未登録扱い
         const status = rowData[4];
@@ -65,7 +65,8 @@ function doPost(e) {
             han: parseInt(rowData[9]),   // J列
             koban: parseInt(rowData[10]),// K列
             age: rowData[11],            // L列
-            roles: roles.join('/')
+            roles: roles.join('/'),
+            dxSupporter: rowData[19] || "NO"  // T列: DX応援団
           }
         })).setMimeType(ContentService.MimeType.JSON);
       }
@@ -126,7 +127,7 @@ function doPost(e) {
       const p = postData;
       updateFullUserInfo(
         p.userId, p.lastName, p.firstName, p.hanban, p.koban, 
-        p.roles, p.displayName, p.ageGeneration,deviceInfo
+        p.roles, p.displayName, p.ageGeneration, deviceInfo, p.dxSupporter
       );
       
       linkRichMenuToUser(p.userId);
@@ -213,7 +214,7 @@ for (let i = 1; i < data.length; i++) {
 /**
  * ユーザー情報を名簿に保存する関数
  */
-function updateFullUserInfo(userId, lastName, firstName, hanban, koban, roles, displayName, ageGeneration, deviceInfo) {
+function updateFullUserInfo(userId, lastName, firstName, hanban, koban, roles, displayName, ageGeneration, deviceInfo, dxSupporter) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   
   // 1. 地区番号の取得
@@ -276,7 +277,8 @@ function updateFullUserInfo(userId, lastName, firstName, hanban, koban, roles, d
     isBosai, 
     isEtc,
     isIppan,                   // R: 一般
-    deviceInfo                 // T: ここに環境情報を保存
+    deviceInfo,                // S: 環境情報
+    dxSupporter || "NO"        // T: DX応援団（YES or NO）
   ];  
 
   if (targetRow > 0) {

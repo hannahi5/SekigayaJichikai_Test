@@ -20,6 +20,12 @@
         input[type="checkbox"] { width: 20px; height: 20px; margin-right: 10px; accent-color: #1DB446; }
         .btn { display: block; width: 100%; padding: 15px; background: #1DB446; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; text-align: center; }
         .btn-sub { background: #666; margin-top: 10px; font-size: 14px; padding: 10px; }
+
+        /* DX応援団セクション（別枠） */
+        .recruit-box { margin-top: 20px; padding: 15px; border: 2px solid #1DB446; border-radius: 10px; background: #f0faf3; }
+        .recruit-box h3 { font-size: 15px; color: #1DB446; margin: 0 0 8px 0; }
+        .recruit-box p { font-size: 13px; color: #555; margin: 0 0 12px 0; line-height: 1.6; }
+        .recruit-box label { display: flex; align-items: center; font-size: 14px; font-weight: bold; color: #1DB446; cursor: pointer; margin-bottom: 0; }
         
         /* 確認画面(View Mode)のスタイル */
         #view-mode { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
@@ -49,6 +55,7 @@
             <div class="info-row"><span class="info-label">班-戸番</span><span class="info-value" id="view-address"></span></div>
             <div class="info-row"><span class="info-label">年代</span><span class="info-value" id="view-age"></span></div>
             <div class="info-row"><span class="info-label">役職</span><span class="info-value" id="view-roles"></span></div>
+            <div class="info-row"><span class="info-label">DX応援団</span><span class="info-value" id="view-dxsupporter"></span></div>
             <button type="button" class="btn btn-sub" onclick="switchToEditMode()">情報を修正・変更する</button>
         </div>
 
@@ -87,6 +94,12 @@
                     <label class="option dimmed"><input type="checkbox" name="role" value="防災部" onchange="handleRoleChange(this)"> 防災部</label>
                     <label class="option dimmed"><input type="checkbox" name="role" value="その他役員" onchange="handleRoleChange(this)"> その他役員</label>
                 </div>
+            </div>
+            <div class="recruit-box">
+                <h3>DX応援団への参加募集</h3>
+                <p>DX委員会では、新しいシステムをいち早く試していただける「DX応援団」への参加者を募集しています！<br>
+                DX応援団に参加すると、新機能をどこよりも早く体験でき、いただいたご意見を今後の改善に活かしていきます。お気軽にご参加ください。</p>
+                <label><input type="checkbox" id="dxSupporter"> DX応援団に参加する</label>
             </div>
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
         </div>
@@ -130,6 +143,7 @@
                 document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
                 document.getElementById('view-age').innerText = u.age || "未選択";
                 document.getElementById('view-roles').innerText = u.roles || "一般";
+                document.getElementById('view-dxsupporter').innerText = u.dxSupporter === "YES" ? "参加" : "-";
                 
                 // フォームの裏側にもセット
                 document.getElementById('lastName').value = u.lastName;
@@ -144,6 +158,7 @@
                     });
                     handleRoleChange();
                 }
+                document.getElementById('dxSupporter').checked = (u.dxSupporter === "YES");
                 
                 document.getElementById('view-mode').style.display = 'block';
                 document.getElementById('welcome-msg').innerText = "ご登録済みの情報は以下の通りです。";
@@ -178,6 +193,10 @@
         const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
         const anyOtherChecked = otherCbs.some(cb => cb.checked);
 
+        // #region agent log
+        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:handleRoleChange:entry',message:'handleRoleChange called',data:{changedId:changed?changed.id:'null',changedValue:changed?changed.value:'null',changedChecked:changed?changed.checked:'null',generalChecked:generalCb.checked,otherCbsCount:otherCbs.length,anyOtherChecked:anyOtherChecked,otherStates:otherCbs.map(cb=>({value:cb.value,checked:cb.checked,disabled:cb.disabled}))},timestamp:Date.now(),hypothesisId:'B,C,E'})}).catch(()=>{});
+        // #endregion
+
         if (changed && changed.id === 'role-general') {
             if (generalCb.checked) {
                 otherCbs.forEach(cb => { cb.checked = false; });
@@ -192,6 +211,10 @@
             }
         }
 
+        // #region agent log
+        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:handleRoleChange:exit',message:'handleRoleChange finished',data:{generalCheckedAfter:generalCb.checked,otherStatesAfter:otherCbs.map(cb=>({value:cb.value,checked:cb.checked}))},timestamp:Date.now(),hypothesisId:'B,D'})}).catch(()=>{});
+        // #endregion
+
         updateRoleDimming();
     }
 
@@ -203,6 +226,9 @@
         const generalCb = document.getElementById('role-general');
         const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
 
+        // #region agent log
+        try {
+        // #endregion
         if (generalCb.checked) {
             generalCb.closest('.option').classList.remove('dimmed');
             otherCbs.forEach(cb => cb.closest('.option').classList.add('dimmed'));
@@ -210,6 +236,12 @@
             generalCb.closest('.option').classList.add('dimmed');
             otherCbs.forEach(cb => cb.closest('.option').classList.remove('dimmed'));
         }
+        // #region agent log
+        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:updateRoleDimming',message:'dimming updated OK',data:{generalChecked:generalCb.checked},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+        } catch(e) {
+        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:updateRoleDimming:error',message:'ERROR in updateRoleDimming',data:{error:e.message,stack:e.stack},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+        }
+        // #endregion
     }
 
     function switchToEditMode() {
@@ -227,6 +259,7 @@
         const kobanStr = document.getElementById('koban').value;
         const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked')).map(el => el.value);
         const roles = selectedRoles.length > 0 ? selectedRoles.join('/') : "一般";
+        const dxSupporter = document.getElementById('dxSupporter').checked ? "YES" : "NO";
 
         if (!lastName || !firstName || !hanStr || !kobanStr) { alert("必須項目をすべて入力してください。"); return; }
 
@@ -238,7 +271,7 @@
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify({
+                    body: JSON.stringify({
                     userId: profile.userId,
                     lastName: lastName,
                     firstName: firstName,
@@ -246,6 +279,7 @@
                     koban: kobanStr,
                     ageGeneration: document.getElementById('ageGeneration').value,
                     roles: roles,
+                    dxSupporter: dxSupporter,
                     displayName: profile.displayName
                 })
             });
@@ -253,7 +287,8 @@
             if (liff.isInClient()) {
                 const actionLabel = isExistingUser ? "【情報更新】" : "【新規登録】";
                 const ageGeneration = document.getElementById('ageGeneration').value || "未選択";
-                const logMessage = `以下の内容で${actionLabel}します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n年代：${ageGeneration}\n役職：${roles}`;
+                const dxSupporterLabel = dxSupporter === "YES" ? "参加" : "-";
+                const logMessage = `以下の内容で${actionLabel}します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n年代：${ageGeneration}\n役職：${roles}\nDX応援団：${dxSupporterLabel}`;
                 await liff.sendMessages([{ type: 'text', text: logMessage }]);
             }
             if (liff.isInClient()) {

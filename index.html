@@ -78,12 +78,12 @@
             <div class="form-group">
                 <label>該当する役職</label>
                 <div class="option-list">
-                    <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked> 一般</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 地区長"> 2026前期 - 地区長</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長"> 2026前期 - 班長</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長（代理）"> 2026前期 - 班長（代理）</label>
-                    <label class="option"><input type="checkbox" name="role" value="防災部"> 防災部</label>
-                    <label class="option"><input type="checkbox" name="role" value="その他役員"> その他役員</label>
+                    <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked onchange="handleRoleChange(this)"> 一般（役職なし）</label>
+                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 地区長" disabled onchange="handleRoleChange(this)"> 2026前期 - 地区長</label>
+                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長" disabled onchange="handleRoleChange(this)"> 2026前期 - 班長</label>
+                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長（代理）" disabled onchange="handleRoleChange(this)"> 2026前期 - 班長（代理）</label>
+                    <label class="option"><input type="checkbox" name="role" value="防災部" disabled onchange="handleRoleChange(this)"> 防災部</label>
+                    <label class="option"><input type="checkbox" name="role" value="その他役員" disabled onchange="handleRoleChange(this)"> その他役員</label>
                 </div>
             </div>
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
@@ -100,7 +100,7 @@
     // ==========================================
     // 1. 【設定値】ここを最新のものに貼り替えてください
     // ==========================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxqtJ3TLrfirTU6RorOBClyW3vZy4eAlqv1C1fuxTzNn4IgyKRuY4OkKF8q4bAs9pNVFA/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzc6cyRU83rHGt0-007TeRCAkgwp9fudeveopWUfsVCCX6RJujljM5qTuOVBTmic91MDg/exec";
     const LIFF_ID = "2009310809-0MVo7qOg";
     let isLiffInitialized = false;
     let isExistingUser = false;
@@ -138,7 +138,9 @@
                     const roleArray = u.roles.split('/');
                     document.querySelectorAll('input[name="role"]').forEach(cb => {
                         cb.checked = roleArray.includes(cb.value);
+                        cb.disabled = false;
                     });
+                    handleRoleChange();
                 }
                 
                 document.getElementById('view-mode').style.display = 'block';
@@ -160,6 +162,37 @@
         fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "temp_register", userId: profile.userId, displayName: profile.displayName }) });
 
     }).catch(err => console.error(err));
+
+    /**
+     * 役職チェックボックスの排他連動
+     * 「一般」とそれ以外の役職を排他的に制御する
+     * @param {HTMLInputElement} [changed] - 変更されたチェックボックス要素
+     */
+    function handleRoleChange(changed) {
+        const generalCb = document.getElementById('role-general');
+        const otherCbs = document.querySelectorAll('input[name="role"]:not(#role-general)');
+
+        if (changed && changed.id === 'role-general') {
+            // 「一般」がチェックされた → 他を全解除＋グレーアウト
+            if (generalCb.checked) {
+                otherCbs.forEach(cb => { cb.checked = false; cb.disabled = true; });
+            } else {
+                otherCbs.forEach(cb => { cb.disabled = false; });
+            }
+        } else {
+            // 他の役職が操作された
+            const anyOtherChecked = Array.from(otherCbs).some(cb => cb.checked);
+            if (anyOtherChecked) {
+                generalCb.checked = false;
+                generalCb.disabled = true;
+            } else {
+                // 他が全て外れた → 一般を自動チェック＋他をグレーアウト
+                generalCb.disabled = false;
+                generalCb.checked = true;
+                otherCbs.forEach(cb => { cb.disabled = true; });
+            }
+        }
+    }
 
     function switchToEditMode() {
         document.getElementById('main-title').innerText = "登録情報の修正";

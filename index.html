@@ -205,6 +205,8 @@
             if (liff.isInClient()) {
                 liff.closeWindow();
             } else {
+                document.getElementById('main-title').style.display = 'none';
+                document.getElementById('welcome-msg').style.display = 'none';
                 document.getElementById('input-form').style.display = 'none';
                 document.getElementById('view-mode').style.display = 'none';
                 document.getElementById('success-message').style.display = 'block';

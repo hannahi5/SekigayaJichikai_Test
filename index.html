@@ -103,6 +103,7 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxBtXNv8WFEdp-sWzrLg08qE-32YC4tTHfeIjJ2BxYi75s1Pw4isrbuQ1eUV497s8DoVw/exec";
     const LIFF_ID = "2009310809-0MVo7qOg";
     let isLiffInitialized = false;
+    let isExistingUser = false;
 
     liff.init({ liffId: LIFF_ID }).then(async () => {
         isLiffInitialized = true;
@@ -119,8 +120,8 @@
             const result = await response.json();
 
             if (result.status === "success") {
+                isExistingUser = true;
                 const u = result.data;
-                // ★ タイトルを「確認」に変更
                 document.getElementById('main-title').innerText = "マイページ（登録情報の確認・修正）";
                 // テキスト表示にセット
                 document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
@@ -199,7 +200,8 @@
             });
 
             if (liff.isInClient()) {
-                const logMessage = `以下の内容で登録します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}\n\n`;
+                const actionLabel = isExistingUser ? "【情報更新】" : "【新規登録】";
+                const logMessage = `以下の内容で${actionLabel}します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}`;
                 await liff.sendMessages([{ type: 'text', text: logMessage }]);
             }
             if (liff.isInClient()) {

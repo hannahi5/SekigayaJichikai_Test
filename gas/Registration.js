@@ -34,12 +34,12 @@ function doPost(e) {
       const sheet = ss.getSheetByName('名簿');
       const userId = postData.userId;
       
-      // ★ 修正ポイント：全データを取らずに「C列」だけを検索して行番号を特定する
+      // 全データを取らずに「C列」だけを検索して行番号を特定する
       const finder = sheet.getRange("C:C").createTextFinder(userId).matchEntireCell(true).findNext();
       
       if (finder) {
         const row = finder.getRow();
-        // ★ 修正ポイント：見つかった1行だけをピンポイントで取得（これが速い！）
+        // 見つかった1行だけをピンポイントで取得（これが速い！）
         const rowData = sheet.getRange(row, 1, 1, 20).getValues()[0]; 
 
         // 役職リストの復元（列番号は rowData のインデックス 0〜19 に対応）
@@ -71,9 +71,14 @@ function doPost(e) {
       const event = postData.events[0];
       
       // １．【リプライ処理】「で登録します。」への返信
-      if (event.type === "message" && event.message.text && event.message.text.includes("以下の内容で登録します。")) {
+      if (event.type === "message" && event.message.text && (event.message.text.includes("【新規登録】") || event.message.text.includes("【情報更新】"))) {
         const replyToken = event.replyToken;
-        const replyText = "承りました！\n下からいつでも修正できます。";
+        let replyText = "";
+        if (event.message.text.includes("【新規登録】")) {
+          replyText = "登録完了しました！\n\n下のメニュー＞マイページからいつでも修正できます。";
+        } else {
+          replyText = "情報を更新しました！";
+        }
         
         UrlFetchApp.fetch('https://api.line.me/v2/bot/message/reply', {
           'headers': {

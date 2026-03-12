@@ -102,7 +102,7 @@
     // ==========================================
     // 1. 【設定値】ここを最新のものに貼り替えてください
     // ==========================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby2ecBQK2DhnDESz2bV6UFmMpqX-O1zmhW1sf9_G4sTHyoxXgrPGUDpByh3ZjrDbZBUuQ/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwo_xMIn_KlFdX_2MYw_6l7lP1e6D7IWUVrpvypV5SegQNlSxZfVwZJkHwvBW2NEouT5Q/exec";
     const LIFF_ID = "2009310809-0MVo7qOg";
     let isLiffInitialized = false;
     let isExistingUser = false;
@@ -168,35 +168,47 @@
     /**
      * 役職チェックボックスの排他連動
      * 「一般」とそれ以外の役職を排他的に制御する
+     * - 一般がONのとき → 他の役職はグレー表示だがクリック可能
+     * - 他の役職をひとつでもONにすると → 一般が自動OFF
+     * - 他の役職が全てOFFになると → 一般が自動ON
      * @param {HTMLInputElement} [changed] - 変更されたチェックボックス要素
      */
     function handleRoleChange(changed) {
         const generalCb = document.getElementById('role-general');
-        const otherCbs = document.querySelectorAll('input[name="role"]:not(#role-general)');
+        const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
+        const anyOtherChecked = otherCbs.some(cb => cb.checked);
 
         if (changed && changed.id === 'role-general') {
             if (generalCb.checked) {
-                otherCbs.forEach(cb => {
-                    cb.checked = false;
-                    cb.closest('.option').classList.add('dimmed');
-                });
-                generalCb.closest('.option').classList.remove('dimmed');
-            } else {
-                otherCbs.forEach(cb => { cb.closest('.option').classList.remove('dimmed'); });
+                otherCbs.forEach(cb => { cb.checked = false; });
+            } else if (!anyOtherChecked) {
+                generalCb.checked = true;
             }
         } else {
-            const anyOtherChecked = Array.from(otherCbs).some(cb => cb.checked);
             if (anyOtherChecked) {
                 generalCb.checked = false;
-                generalCb.closest('.option').classList.add('dimmed');
-                otherCbs.forEach(cb => {
-                    cb.closest('.option').classList.remove('dimmed');
-                });
             } else {
                 generalCb.checked = true;
-                generalCb.closest('.option').classList.remove('dimmed');
-                otherCbs.forEach(cb => { cb.closest('.option').classList.add('dimmed'); });
             }
+        }
+
+        updateRoleDimming();
+    }
+
+    /**
+     * 役職チェックボックスのグレー表示を更新する
+     * 一般ON → 他をグレー表示、一般OFF → 一般をグレー表示
+     */
+    function updateRoleDimming() {
+        const generalCb = document.getElementById('role-general');
+        const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
+
+        if (generalCb.checked) {
+            generalCb.closest('.option').classList.remove('dimmed');
+            otherCbs.forEach(cb => cb.closest('.option').classList.add('dimmed'));
+        } else {
+            generalCb.closest('.option').classList.add('dimmed');
+            otherCbs.forEach(cb => cb.closest('.option').classList.remove('dimmed'));
         }
     }
 

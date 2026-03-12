@@ -15,7 +15,8 @@
         input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: white; }
         .hint { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
         .option-list { border: 1px solid #eee; border-radius: 8px; padding: 10px; background: #fafafa; }
-        .option { display: flex; align-items: center; padding: 8px 0; cursor: pointer; border-bottom: 1px solid #eee; }
+        .option { display: flex; align-items: center; padding: 8px 0; cursor: pointer; border-bottom: 1px solid #eee; transition: opacity 0.2s; }
+        .option.dimmed { opacity: 0.4; }
         input[type="checkbox"] { width: 20px; height: 20px; margin-right: 10px; accent-color: #1DB446; }
         .btn { display: block; width: 100%; padding: 15px; background: #1DB446; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; text-align: center; }
         .btn-sub { background: #666; margin-top: 10px; font-size: 14px; padding: 10px; }
@@ -80,11 +81,11 @@
                 <label>該当する役職</label>
                 <div class="option-list">
                     <label class="option"><input type="checkbox" name="role" value="一般" id="role-general" checked onchange="handleRoleChange(this)"> 一般（役職なし）</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 地区長" disabled onchange="handleRoleChange(this)"> 2026前期 - 地区長</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長" disabled onchange="handleRoleChange(this)"> 2026前期 - 班長</label>
-                    <label class="option"><input type="checkbox" name="role" value="2026前期 - 班長（代理）" disabled onchange="handleRoleChange(this)"> 2026前期 - 班長（代理）</label>
-                    <label class="option"><input type="checkbox" name="role" value="防災部" disabled onchange="handleRoleChange(this)"> 防災部</label>
-                    <label class="option"><input type="checkbox" name="role" value="その他役員" disabled onchange="handleRoleChange(this)"> その他役員</label>
+                    <label class="option dimmed"><input type="checkbox" name="role" value="2026前期 - 地区長" onchange="handleRoleChange(this)"> 2026前期 - 地区長</label>
+                    <label class="option dimmed"><input type="checkbox" name="role" value="2026前期 - 班長" onchange="handleRoleChange(this)"> 2026前期 - 班長</label>
+                    <label class="option dimmed"><input type="checkbox" name="role" value="2026前期 - 班長（代理）" onchange="handleRoleChange(this)"> 2026前期 - 班長（代理）</label>
+                    <label class="option dimmed"><input type="checkbox" name="role" value="防災部" onchange="handleRoleChange(this)"> 防災部</label>
+                    <label class="option dimmed"><input type="checkbox" name="role" value="その他役員" onchange="handleRoleChange(this)"> その他役員</label>
                 </div>
             </div>
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
@@ -140,7 +141,6 @@
                     const roleArray = u.roles.split('/');
                     document.querySelectorAll('input[name="role"]').forEach(cb => {
                         cb.checked = roleArray.includes(cb.value);
-                        cb.disabled = false;
                     });
                     handleRoleChange();
                 }
@@ -175,23 +175,27 @@
         const otherCbs = document.querySelectorAll('input[name="role"]:not(#role-general)');
 
         if (changed && changed.id === 'role-general') {
-            // 「一般」がチェックされた → 他を全解除＋グレーアウト
             if (generalCb.checked) {
-                otherCbs.forEach(cb => { cb.checked = false; cb.disabled = true; });
+                otherCbs.forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.option').classList.add('dimmed');
+                });
+                generalCb.closest('.option').classList.remove('dimmed');
             } else {
-                otherCbs.forEach(cb => { cb.disabled = false; });
+                otherCbs.forEach(cb => { cb.closest('.option').classList.remove('dimmed'); });
             }
         } else {
-            // 他の役職が操作された
             const anyOtherChecked = Array.from(otherCbs).some(cb => cb.checked);
             if (anyOtherChecked) {
                 generalCb.checked = false;
-                generalCb.disabled = true;
+                generalCb.closest('.option').classList.add('dimmed');
+                otherCbs.forEach(cb => {
+                    cb.closest('.option').classList.remove('dimmed');
+                });
             } else {
-                // 他が全て外れた → 一般を自動チェック＋他をグレーアウト
-                generalCb.disabled = false;
                 generalCb.checked = true;
-                otherCbs.forEach(cb => { cb.disabled = true; });
+                generalCb.closest('.option').classList.remove('dimmed');
+                otherCbs.forEach(cb => { cb.closest('.option').classList.add('dimmed'); });
             }
         }
     }

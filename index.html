@@ -46,6 +46,7 @@
         <div id="view-mode" style="display: none;">
             <div class="info-row"><span class="info-label">氏名</span><span class="info-value" id="view-name"></span></div>
             <div class="info-row"><span class="info-label">班-戸番</span><span class="info-value" id="view-address"></span></div>
+            <div class="info-row"><span class="info-label">年代</span><span class="info-value" id="view-age"></span></div>
             <div class="info-row"><span class="info-label">役職</span><span class="info-value" id="view-roles"></span></div>
             <button type="button" class="btn btn-sub" onclick="switchToEditMode()">情報を修正・変更する</button>
         </div>
@@ -126,6 +127,7 @@
                 // テキスト表示にセット
                 document.getElementById('view-name').innerText = `${u.lastName} ${u.firstName}`;
                 document.getElementById('view-address').innerText = `${u.han}班-${u.koban}番`;
+                document.getElementById('view-age').innerText = u.age || "未選択";
                 document.getElementById('view-roles').innerText = u.roles || "一般";
                 
                 // フォームの裏側にもセット
@@ -234,7 +236,8 @@
 
             if (liff.isInClient()) {
                 const actionLabel = isExistingUser ? "【情報更新】" : "【新規登録】";
-                const logMessage = `以下の内容で${actionLabel}します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n役職：${roles}`;
+                const ageGeneration = document.getElementById('ageGeneration').value || "未選択";
+                const logMessage = `以下の内容で${actionLabel}します。\n\n氏名：${lastName} ${firstName}\n班-戸番：${hanStr}-${kobanStr}\n年代：${ageGeneration}\n役職：${roles}`;
                 await liff.sendMessages([{ type: 'text', text: logMessage }]);
             }
             if (liff.isInClient()) {

@@ -82,7 +82,7 @@ function doPost(e) {
         const replyToken = event.replyToken;
         let replyText = "";
         if (event.message.text.includes("【新規登録】")) {
-          replyText = "登録完了しました！\n\n同じボタンからいつでも修正できます。";
+          replyText = "利用登録を完了しました！";
         } else {
           replyText = "情報を更新しました！";
         }

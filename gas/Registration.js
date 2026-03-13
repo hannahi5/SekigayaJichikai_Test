@@ -42,9 +42,16 @@ function doPost(e) {
         // 見つかった1行だけをピンポイントで取得
         const rowData = sheet.getRange(row, 1, 1, 21).getValues()[0]; 
 
-        // E列（ステータス）が「有効」または「ブロック済」以外は未登録扱い
+        // E列（ステータス）チェック
         const status = rowData[4];
-        if (status !== "有効" && status !== "ブロック済") {
+
+        // 「ブロック済」の場合はマイページを表示せず、専用メッセージを返す
+        if (status === "ブロック済") {
+          return ContentService.createTextOutput(JSON.stringify({status: 'blocked'})).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // 「有効」以外（TEMP、リマインド済など）は未登録扱い
+        if (status !== "有効") {
           return ContentService.createTextOutput(JSON.stringify({status: 'not_found'})).setMimeType(ContentService.MimeType.JSON);
         }
 

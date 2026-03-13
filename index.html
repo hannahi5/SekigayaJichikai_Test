@@ -104,6 +104,16 @@
             <button class="btn" id="submitBtn" onclick="submitForm()">この内容で登録する</button>
         </div>
 
+        <div id="blocked-message" style="display: none; text-align: center; padding: 30px 10px;">
+            <div style="font-size: 40px; margin-bottom: 15px;">&#x1F6AB;</div>
+            <h3 style="color: #e53935; font-size: 17px;">このサービスはご利用いただけません</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.8; margin-top: 15px;">
+                現在、この機能をご利用いただけない状態です。<br>
+                LINE公式アカウントを<strong>友だち追加</strong>してからご利用ください。
+            </p>
+            <button class="btn" style="background: #888; margin-top: 25px;" onclick="liff.closeWindow()">閉じる</button>
+        </div>
+
         <div id="success-message" style="display: none; text-align: center;">
             <h3 style="color: #1DB446;">完了</h3>
             <p>お手続きありがとうございました。</p>
@@ -149,6 +159,15 @@
                 body: JSON.stringify({ action: "get_user_info", userId: profile.userId })
             });
             const result = await response.json();
+
+            if (result.status === "blocked") {
+                // ブロック済ユーザー：マイページを表示せず案内画面を表示
+                document.getElementById('main-title').style.display = 'none';
+                document.getElementById('welcome-msg').style.display = 'none';
+                document.getElementById('blocked-message').style.display = 'block';
+                document.getElementById('loading-overlay').style.display = 'none';
+                return;
+            }
 
             if (result.status === "success") {
                 isExistingUser = true;

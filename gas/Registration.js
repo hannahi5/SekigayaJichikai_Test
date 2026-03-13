@@ -104,9 +104,15 @@ function doPost(e) {
       }
 
 
-      // ２．【ブロック検知】ここを「if (postData.events...」の中に移動しました
+      // ２．【ブロック検知】
       if (event.type === "unfollow") {
         updateBlockStatus(event.source.userId);
+        return ContentService.createTextOutput("OK");
+      }
+
+      // ３．【ブロック解除（再フォロー）検知】
+      if (event.type === "follow") {
+        updateUnblockStatus(event.source.userId);
         return ContentService.createTextOutput("OK");
       }
     } // ←  eventsここまで
@@ -167,20 +173,20 @@ function saveTempUser(userId, displayName, deviceInfo) {
     const now = new Date();
     sheet.getRange(targetRow, 2).setValue(now);         // B列: 更新日時
     sheet.getRange(targetRow, 4).setValue(displayName); // D列: 名前（変更があるかもなので上書き）
-    sheet.getRange(targetRow, 20).setValue(deviceInfo); 
+    sheet.getRange(targetRow, 19).setValue(deviceInfo); // S列: デバイス情報
     
     console.log("既存ユーザーの更新日時を更新しました: " + userId);
   } else {
     // --- 初回アクセス：新規行を追加 ---
-    // A:登録日, B:更新日, C:ID, D:LINE名, E:ステータス(TEMP) ... S:デバイス情報
+    // A:登録日, B:更新日, C:ID, D:LINE名, E:ステータス(TEMP), F〜R:空, S:デバイス情報
     const row = [
       new Date(), // A: 登録日
       new Date(), // B: 更新日
       userId,     // C: UserID
       displayName || "", // D: LINE名
       "TEMP",     // E: ステータス
-      "", "", "", "", "", "", "", "", "", "", "", "", "", // F〜Q列を空で埋める
-      deviceInfo  // R: デバイス情報
+      "", "", "", "", "", "", "", "", "", "", "", "", "", // F〜R列を空で埋める（13列）
+      deviceInfo  // S: デバイス情報
     ];
     sheet.appendRow(row);
     console.log("新規ユーザーを仮登録しました: " + userId);
@@ -304,6 +310,7 @@ function linkRichMenuToUser(userId) {
 
 /**
  * ユーザーがブロックした際に「ステータス列」を更新する
+ * @param {string} userId - LINEユーザーID
  */
 function updateBlockStatus(userId) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -315,6 +322,33 @@ function updateBlockStatus(userId) {
       const targetRow = i + 1;
       // E列（5列目）を「ブロック済」にする
       sheet.getRange(targetRow, 5).setValue("ブロック済");
+      console.log("ブロック検知 → ステータスを「ブロック済」に更新: " + userId);
+      break;
+    }
+  }
+}
+
+
+/**
+ * ユーザーがブロック解除（再フォロー）した際に「ステータス列」を復帰する
+ * 「ブロック済」の場合のみ「有効」に戻す。TEMPやリマインド済は対象外。
+ * @param {string} userId - LINEユーザーID
+ */
+function updateUnblockStatus(userId) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('名簿');
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][2] === userId) {
+      const targetRow = i + 1;
+      const currentStatus = data[i][4]; // E列: ステータス
+      if (currentStatus === "ブロック済") {
+        // ブロック済 → 有効に復帰
+        sheet.getRange(targetRow, 5).setValue("有効");
+        sheet.getRange(targetRow, 2).setValue(new Date()); // B列: 更新日時も更新
+        console.log("ブロック解除検知 → ステータスを「有効」に復帰: " + userId);
+      }
       break;
     }
   }

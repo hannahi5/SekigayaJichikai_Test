@@ -120,11 +120,27 @@
     let isLiffInitialized = false;
     let isExistingUser = false;
 
+    /**
+     * デバイス情報を取得する
+     * LIFF SDKの getOS() と navigator.userAgent を組み合わせて環境情報を生成
+     * @returns {string} デバイス情報（例: "ios / Mozilla/5.0 ..."）
+     */
+    function getDeviceInfo() {
+        try {
+            const os = liff.getOS() || "unknown";
+            const ua = navigator.userAgent || "";
+            return `${os} / ${ua}`.substring(0, 200);
+        } catch (e) {
+            return navigator.userAgent ? navigator.userAgent.substring(0, 200) : "取得失敗";
+        }
+    }
+
     liff.init({ liffId: LIFF_ID }).then(async () => {
         isLiffInitialized = true;
         if (!liff.isLoggedIn()) { liff.login(); return; }
         
         const profile = await liff.getProfile();
+        const deviceInfo = getDeviceInfo();
         
         try {
             // 既存データの取得
@@ -175,8 +191,8 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        // 仮登録ログ
-        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "temp_register", userId: profile.userId, displayName: profile.displayName }) });
+        // 仮登録ログ（デバイス情報を含む）
+        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "temp_register", userId: profile.userId, displayName: profile.displayName, deviceInfo: deviceInfo }) });
 
     }).catch(err => console.error(err));
 
@@ -193,10 +209,6 @@
         const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
         const anyOtherChecked = otherCbs.some(cb => cb.checked);
 
-        // #region agent log
-        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:handleRoleChange:entry',message:'handleRoleChange called',data:{changedId:changed?changed.id:'null',changedValue:changed?changed.value:'null',changedChecked:changed?changed.checked:'null',generalChecked:generalCb.checked,otherCbsCount:otherCbs.length,anyOtherChecked:anyOtherChecked,otherStates:otherCbs.map(cb=>({value:cb.value,checked:cb.checked,disabled:cb.disabled}))},timestamp:Date.now(),hypothesisId:'B,C,E'})}).catch(()=>{});
-        // #endregion
-
         if (changed && changed.id === 'role-general') {
             if (generalCb.checked) {
                 otherCbs.forEach(cb => { cb.checked = false; });
@@ -211,10 +223,6 @@
             }
         }
 
-        // #region agent log
-        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:handleRoleChange:exit',message:'handleRoleChange finished',data:{generalCheckedAfter:generalCb.checked,otherStatesAfter:otherCbs.map(cb=>({value:cb.value,checked:cb.checked}))},timestamp:Date.now(),hypothesisId:'B,D'})}).catch(()=>{});
-        // #endregion
-
         updateRoleDimming();
     }
 
@@ -226,9 +234,6 @@
         const generalCb = document.getElementById('role-general');
         const otherCbs = Array.from(document.querySelectorAll('input[name="role"]:not(#role-general)'));
 
-        // #region agent log
-        try {
-        // #endregion
         if (generalCb.checked) {
             generalCb.closest('.option').classList.remove('dimmed');
             otherCbs.forEach(cb => cb.closest('.option').classList.add('dimmed'));
@@ -236,12 +241,6 @@
             generalCb.closest('.option').classList.add('dimmed');
             otherCbs.forEach(cb => cb.closest('.option').classList.remove('dimmed'));
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:updateRoleDimming',message:'dimming updated OK',data:{generalChecked:generalCb.checked},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-        } catch(e) {
-        fetch('http://127.0.0.1:7387/ingest/f81fbcdd-2939-4024-8b25-bffe26fbfac6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5f4a37'},body:JSON.stringify({sessionId:'5f4a37',location:'index.html:updateRoleDimming:error',message:'ERROR in updateRoleDimming',data:{error:e.message,stack:e.stack},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-        }
-        // #endregion
     }
 
     function switchToEditMode() {
@@ -280,7 +279,8 @@
                     ageGeneration: document.getElementById('ageGeneration').value,
                     roles: roles,
                     dxSupporter: dxSupporter,
-                    displayName: profile.displayName
+                    displayName: profile.displayName,
+                    deviceInfo: getDeviceInfo()
                 })
             });
 
